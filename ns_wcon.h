@@ -2,12 +2,12 @@
 
 //////////////////////////////////////////////////////////////////////////
 //
-// ns_wson.h
+// ns_wcon.h
 // 
 // The class ns_worm_tracker_commons_object implements an extendable parser/writer for the
 // Worm tracker Commons Object Notation schema
 // wcon_schema.json 
-// as in specified August 2018.
+// as specified in August 2018.
 // https://github.com/openworm/tracker-commons
 //
 // Implemented by Nicholas Stroustrup 
@@ -18,13 +18,20 @@
 //
 //
 // Only a single header include is required.  There are no object files.
-// ns_wson is based on the JSON for Modern C++ library by Niels Lohmann ( https://github.com/nlohmann/json )
+// ns_wcon is based on the JSON for Modern C++ library by Niels Lohmann ( https://github.com/nlohmann/json )
 //
 // Worm data is specified by a template argument timepoint_data_t
 // By default, the parser/writer uses the minimal specification described in the WCON schema
 //
-// The extendability of this parser/writer is demonstrated in ns_wson_rich_data_record
+// The extendability of this parser/writer is demonstrated in ns_wcon_rich_data_record
 // which implements the full schema.
+//
+// Known limitations:
+// 1.  Support for user defined variables is uneven
+// 2.  No support for units defined in terms of algebric combinations of other units
+// 3.  Specifications for unit outside of the standard single "units" object are ignored
+// 4.  Unrecognized fields trigger output to cerr, which may be unattended
+// 5.  No integrated DEFLATE support--library users must do this themselves.
 //
 //////////////////////////////////////////////////////////////////////////
 
@@ -36,8 +43,8 @@
 #include <iostream>
 #include <algorithm>
 
-#undef NS_WSON_VERBOSE 
-//#define NS_WSON_VERBOSE
+#undef NS_wcon_VERBOSE 
+//#define NS_wcon_VERBOSE
 
 //convert between various types
 class ns_quick_type_conversion {
@@ -81,7 +88,7 @@ public:
 	static void set(std::vector<double> & d, const std::string & s) { d.resize(0); d.push_back(atof(s.c_str())); }
 
 	static bool compare_double(const double & a, const double & b, const double epsillon = .0000001) {
-		#ifdef NS_WSON_VERBOSE
+		#ifdef NS_wcon_VERBOSE
 		if (fabs(a - b) >= epsillon)
 			std::cerr << "Difference detected\n";
 		#endif
@@ -98,13 +105,13 @@ public:
 };
 
 //corresponds to similarly named object in WCON schema
-struct ns_wson_arena {
-	ns_wson_arena():style("petri"),size(2,-1){}
+struct ns_wcon_arena {
+	ns_wcon_arena():style("petri"),size(2,-1){}
 	std::string style, orientation;
 	std::vector<double> size;
 
 	bool specified() const { return size.size() >= 2 && size[0] != -1 && size[1] != -1; }
-	bool operator ==(const ns_wson_arena & r) const {
+	bool operator ==(const ns_wcon_arena & r) const {
 		return style == r.style &&
 			r.orientation == orientation &&
 			ns_quick_type_conversion::compare_double_arrays(size, r.size);
@@ -113,44 +120,42 @@ struct ns_wson_arena {
 };
 
 //corresponds to similarly named object in WCON schema
-struct ns_wson_interpolation {
+struct ns_wcon_interpolation {
 	std::string method;
 	std::vector<std::string > values;
 
 	bool specified() const { return !method.empty(); }
-	bool operator==(const ns_wson_interpolation & i) const { 
-		return method == i.method && values == i.values; 
-	}
+	bool operator==(const ns_wcon_interpolation & i) const {return method == i.method && values == i.values;}
 	nlohmann::json to_json() const;
 };
 
 //corresponds to similarly named object in WCON schema
-struct ns_wson_tracker {
+struct ns_wcon_tracker {
 	std::string name, version;
 
 	bool specified() const { return !name.empty(); }
-	bool operator==(const ns_wson_tracker & i) const { return name == i.name && version == i.version; }
+	bool operator==(const ns_wcon_tracker & i) const { return name == i.name && version == i.version; }
 	nlohmann::json to_json() const;
 };
 
 //corresponds to similarly named object in WCON schema
-struct ns_wson_software_metadata {
-	ns_wson_tracker tracker;
+struct ns_wcon_software_metadata {
+	ns_wcon_tracker tracker;
 	std::string feature_id;
 
 	bool specified() const { return tracker.specified(); }
-	bool operator==(const ns_wson_software_metadata & r) const { return tracker  == r.tracker && feature_id == r.feature_id; }
+	bool operator==(const ns_wcon_software_metadata & r) const { return tracker  == r.tracker && feature_id == r.feature_id; }
 	nlohmann::json to_json() const;
 };
-struct ns_wson_pattern_properties{
+struct ns_wcon_pattern_properties{
 	std::string title, description;
-	bool operator==(const ns_wson_pattern_properties & r) const { return title == r.title && description == r.description; }
+	bool operator==(const ns_wcon_pattern_properties & r) const { return title == r.title && description == r.description; }
 	nlohmann::json to_json() const;
 };
 
 //corresponds to similarly named object in WCON schema
-struct ns_wson_metadata {
-	ns_wson_metadata() :timestamp(0), temperature(-1), humidity(-1),stage(ns_stage_na),sex(ns_sex_na),age(-1){}
+struct ns_wcon_metadata {
+	ns_wcon_metadata() :temperature(-1), humidity(-1),stage(ns_stage_na),sex(ns_sex_na),age(-1){}
 	typedef enum {ns_stage_na,L1,L2,L3,L4,adult, dauer} ns_stage;
 	typedef enum {ns_sex_na,hermaphrodite, male } ns_sex;
 	static std::string to_string(const ns_stage & stage);
@@ -162,52 +167,45 @@ struct ns_wson_metadata {
 	std::map<std::string,std::string> lab;
 	std::vector<std::string> who;
 	std::vector<std::string> protocol;
-	unsigned long timestamp;
+	std::string timestamp;
 	double temperature, humidity;
-	ns_wson_arena arena;
+	ns_wcon_arena arena;
 	ns_stage stage;
 	ns_sex sex;
 	std::string food, 
 		media, 
 		strain;
 	double age;
-	std::vector< ns_wson_interpolation> interpolate;
-	std::vector<ns_wson_software_metadata> software;
+	std::vector< ns_wcon_interpolation> interpolate;
+	std::vector<ns_wcon_software_metadata> software;
 	std::map<std::string, std::string> additional_properties;
 
-	bool operator==(const ns_wson_metadata & r) const {
-		return id == r.id && lab == r.lab && who == r.who && protocol == r.protocol && timestamp == r.timestamp && temperature == r.temperature &&
-			humidity == r.humidity && arena == r.arena && stage == r.stage && sex == r.sex && food == r.food &&
-			media == r.media && strain == r.strain && age == r.age && interpolate == r.interpolate && r.software == r.software && additional_properties == r.additional_properties;
-		}
+	bool operator==(const ns_wcon_metadata & r) const;
 	bool is_specified() const;
 	nlohmann::json to_json() const;
 };
 
 //corresponds to similarly named object in WCON schema
-struct ns_wson_units {
+struct ns_wcon_units {
 	typedef enum {
-		ns_wson_nanoseconds, ns_wson_microseconds,ns_wson_milliseconds, ns_wson_seconds, 
-		ns_wson_minutes, ns_wson_hours, ns_wson_days, ns_wson_years, 
-		ns_wson_nm, ns_wson_um,ns_wson_mm, ns_wson_cm, ns_wson_m, ns_wson_km, 
-		ns_wson_inches, ns_wson_feet, ns_wson_yards, ns_wson_miles,
-		ns_wson_degrees_F,ns_wson_degrees_C, ns_wson_degrees_K,
+		ns_wcon_nanoseconds, ns_wcon_microseconds,ns_wcon_milliseconds, ns_wcon_seconds, 
+		ns_wcon_minutes, ns_wcon_hours, ns_wcon_days, ns_wcon_years, 
+		ns_wcon_nm, ns_wcon_um,ns_wcon_mm, ns_wcon_cm, ns_wcon_m, ns_wcon_km, 
+		ns_wcon_inches, ns_wcon_feet, ns_wcon_yards, ns_wcon_miles,
+		ns_wcon_mm_per_second, ns_wcon_m_per_second, ns_wcon_inverse_meters,ns_wcon_inverse_millimeters,
+		ns_wcon_degrees_F,ns_wcon_degrees_C, ns_wcon_degrees_K,
 		ns_radians,ns_degrees,ns_percent,ns_unitless
 	} ns_units;
 
-	ns_wson_units() :ox(ns_unitless), oy(ns_unitless) {}
+	ns_wcon_units() :ox(ns_unitless), oy(ns_unitless) {}
 	ns_units time;
 	ns_units x, y, ox, oy;
 	std::map<std::string, ns_units> additional_units;
 	std::string additional_properties;
 
 
-	bool operator==(const ns_wson_units & r) const { 
-		return time == r.time && x == r.x &&  y == r.y && ox == r.ox && oy == r.oy && 
-		additional_units == r.additional_units && additional_properties == r.additional_properties;
-	}
+	bool operator==(const ns_wcon_units & r) const;
 	
-
 	static std::string to_string(const ns_units & t);
 	static bool matches_singular(const std::string & subject, const char * test);
 	static ns_units from_string(const std::string & str);
@@ -215,33 +213,27 @@ struct ns_wson_units {
 };
 
 //corresponds to similarly named object in WCON schema
-struct ns_wson_file_list_entry {
-	std::string prev, current, next;
-	bool operator==(const ns_wson_file_list_entry & r) const { return prev == r.prev && current == r.current &&  next == r.next; }
+struct ns_wcon_file_list_entry {
+	std::vector<std::string> prev, next;
+	std::string current;
+	bool operator==(const ns_wcon_file_list_entry & r) const { return prev == r.prev && current == r.current &&  next == r.next; }
 	bool is_specified() const;
 	nlohmann::json to_json() const;
 };
 
 //supported data types that can be stored in data fields of a WCON record element
-typedef enum { ns_unknown,ns_double, ns_string, ns_vector_double, ns_vector_string, ns_subclass} ns_wson_data_element_member_type;
+typedef enum { ns_unknown,ns_double, ns_string, ns_vector_double, ns_vector_string, ns_subclass} ns_wcon_data_element_member_type;
 
 //implements the data handled by a minimal WCON writer/parser
-class ns_wson_default_data_record_element {
+class ns_wcon_default_data_record_element {
 public:
-	ns_wson_default_data_record_element() :ox(0), oy(0) {}
+	ns_wcon_default_data_record_element() :ox(0), oy(0) {}
 	//required elements
 	std::string id;
 	double t, x, y, ox, oy;
 	bool using_origin_coordinates;
 
-	bool operator==(const ns_wson_default_data_record_element & a) const {
-		return ns_quick_type_conversion::compare_double(t, a.t) &&
-			ns_quick_type_conversion::compare_double(x, a.x) &&
-			ns_quick_type_conversion::compare_double(y, a.y) &&
-			ns_quick_type_conversion::compare_double(ox, a.ox) &&
-			ns_quick_type_conversion::compare_double(oy, a.oy) &&
-			id == a.id;
-	}
+	bool operator==(const ns_wcon_default_data_record_element & a) const;
 
 
 	//fields required by extendible data type implementation
@@ -257,7 +249,7 @@ public:
 
 	static int number_of_additional_json_fields() { return 0; }
 	static std::string additional_json_field_name(const int &i) {return "";}
-	static ns_wson_data_element_member_type additional_json_field_type(const int &i) {return ns_unknown;}
+	static ns_wcon_data_element_member_type additional_json_field_type(const int &i) {return ns_unknown;}
 
 	std::string get_additional_json_field_value_string(const int &i) const { return ""; }
 	const double get_additional_json_field_value_double(const int &i) const { return 0; }
@@ -271,7 +263,7 @@ public:
 
 	template<class T>
 	bool set_value(const std::string & key, const T & val,const std::string & subclass = "") {
-		std::cerr << "Encountered unexpected data variable " << key; 
+		std::cerr << "Encountered unexpected data variable " << key << "\n";;
 		return true;
 	}
 };
@@ -283,12 +275,12 @@ public:
 //either split by timepoints (an array of objects, one for each timepoint, each object containing multiple variables)
 //or split by variables (an object containing arrays, one array containing all measurements of each variable)
 template<class timepoint_data_t>
-class ns_wson_data_record {
+class ns_wcon_data_record {
 public:
 	std::vector<timepoint_data_t> data;
 
 	void sort_by_time_and_id();
-	bool operator ==(const ns_wson_data_record<timepoint_data_t> & d) const {
+	bool operator ==(const ns_wcon_data_record<timepoint_data_t> & d) const {
 		if (data.size() != d.data.size()) 
 			return false;
 		for (std::size_t i = 0; i < data.size(); i++) {
@@ -307,14 +299,21 @@ private:
 // The class ns_worm_tracker_commons_object implements an extendable parser/writer for the
 // Worm tracker Commons Object Notation schema
 // wcon_schema.json 
-template<class timepoint_data_t = ns_wson_default_data_record_element>
+template<class timepoint_data_t = ns_wcon_default_data_record_element>
 class ns_worm_tracker_commons_object {
 public:
 	ns_worm_tracker_commons_object() :write_split_timepoint(true) {}
-	ns_wson_file_list_entry files;
-	ns_wson_units units;
-	ns_wson_metadata metadata;
-	ns_wson_data_record<timepoint_data_t> data;
+	ns_wcon_file_list_entry files;
+	ns_wcon_units units;
+	ns_wcon_metadata metadata;
+	std::string comment;
+
+	//the structured timeseries of data points
+	ns_wcon_data_record<timepoint_data_t> data;
+
+	//any key/value pairs in the base commons object that were not recognized
+	std::map<std::string, std::vector<std::string> > additional_unrecognized_fields;
+
 	nlohmann::json to_json(bool split_timepoints = true) const;
 	void from_stream(std::istream & in);
 	void to_stream(std::ostream & out) const;
@@ -322,7 +321,7 @@ public:
 	bool write_split_timepoint;
 
 	bool operator ==(const ns_worm_tracker_commons_object<timepoint_data_t> & w) const{
-		#ifdef NS_WSON_VERBOSE
+		#ifdef NS_wcon_VERBOSE
 				if (!(files == w.files))
 					std::cerr << "Difference detected in files\n";
 				if (!(units == w.units))
@@ -349,21 +348,31 @@ public:
 	}
 };
 
-// The class ns_wson_sax_parser implements a SAX-style JSON parser to efficiently
+// The class ns_wcon_sax_parser implements a SAX-style JSON parser to efficiently
 // load large WCON objects using minimal memory
 // This SAX parser is passed to the json library which handles all the lexer / tokenizer work
-template<class timepoint_data_t = ns_wson_default_data_record_element>
-class ns_wson_sax_parser : public nlohmann::json_sax<nlohmann::json> {
+template<class timepoint_data_t = ns_wcon_default_data_record_element>
+class ns_wcon_sax_parser : public nlohmann::json_sax<nlohmann::json> {
 public:
 	typedef nlohmann::detail::exception exception;
 
-	ns_wson_sax_parser(ns_worm_tracker_commons_object<timepoint_data_t> & data_storage_) :
-		state(ns_reading_base_class), object_depth(0),array_depth(0), next_unsigned_integer(0), next_integer(0), next_string_vector(0), next_double_vector(0), next_enum(ns_no_enum), data(&data_storage_), next_string(0), next_double(0) {}
+	ns_wcon_sax_parser(ns_worm_tracker_commons_object<timepoint_data_t> & data_storage_) :
+		state(ns_reading_base_class), object_depth(0),array_depth(0),ignore_next_value(false), next_unsigned_integer(0), next_integer(0), next_string_vector(0), next_double_vector(0), next_enum(ns_no_enum), data(&data_storage_), next_string(0), next_double(0) {}
 
 
 	bool key(string_t& val) {
-		#ifdef NS_WSON_VERBOSE
-		std::cout << "level " << object_depth << " key:" << val << "\n";
+		#ifdef NS_wcon_VERBOSE
+			if (next_double != 0)
+				std::cerr << "nzD:";
+			if (next_unsigned_integer != 0)
+				std::cerr << "nzI:";
+			if (next_string != 0)
+				std::cerr << "nzs:";
+			if (next_string_vector != 0)
+				std::cerr << "nzsv:";
+			if (next_double_vector != 0)
+				std::cerr << "nzdv:";
+			std::cout << "level " << object_depth << " key:" << val << "\n";
 		#endif
 		if (object_depth == 2)
 			substate = ns_none;
@@ -379,7 +388,15 @@ public:
 				state = ns_reading_files;
 			else if (val == "metadata")
 				state = ns_reading_metadata;
-			else std::cerr << "unrecognized key: " << val << "\n";
+			else  if (val == "comment") {
+				state = ns_reading_comment;
+				next_string = &data->comment;
+			}
+			else {
+				state = ns_reading_unrecognized;
+				std::cerr << "unrecognized key: " << val << "\n";
+				next_string_vector = &(data->additional_unrecognized_fields[val]);
+			}
 			return true;
 		}
 
@@ -387,9 +404,9 @@ public:
 		case ns_reading_base_class: throw std::exception("Entered unexpected state");
 		case ns_reading_files: {
 			if (val == "prev")
-				next_string = &data->files.prev;
+				next_string_vector = &data->files.prev;
 			else if (val == "next")
-				next_string = &data->files.next;
+				next_string_vector = &data->files.next;
 			else if (val == "current")
 				next_string = &data->files.current;
 			else std::cerr << "unrecognized key: " << val << "\n";
@@ -423,7 +440,7 @@ public:
 				else if (val == "who")
 					next_string_vector = &data->metadata.who;
 				else if (val == "timestamp")
-					next_unsigned_integer = &data->metadata.timestamp;
+					next_string = &data->metadata.timestamp;
 				else if (val == "temperature")
 					next_double = &data->metadata.temperature;
 				else if (val == "humidity")
@@ -454,7 +471,6 @@ public:
 				}
 				break;
 			}
-
 			case ns_metadata_arena: {
 				if (val == "style")
 					next_string = &data->metadata.arena.style;
@@ -464,8 +480,10 @@ public:
 				}
 				else if (val == "orientation")
 					next_string = &data->metadata.arena.orientation;
-				else
+				else {
 					std::cerr << "Unrecognized arena property : " << val << "\n";
+					ignore_next_value = true;
+				}
 				break;
 			}
 			case ns_metadata_lab: {
@@ -479,8 +497,10 @@ public:
 					next_string = &data->metadata.interpolate.rbegin()->method;
 				else if (val == "values")
 					next_string_vector = &data->metadata.interpolate.rbegin()->values;
-				else
+				else {
 					std::cerr << "Unrecognized interpolate property : " << val << "\n";
+					ignore_next_value = true;
+				}
 				break;
 			}
 			case ns_metadata_software: {
@@ -494,7 +514,10 @@ public:
 					else if (val == "featureID")
 						next_string = &data->metadata.software.rbegin()->feature_id;
 					else if (val == "tracker"); //do nothing
-					else std::cerr << "Unrecognized software metadata property: " << val << "\n";
+					else {
+						std::cerr << "Unrecognized software metadata property: " << val << "\n";
+						ignore_next_value = true;
+					}
 				}
 				break;
 			}
@@ -612,43 +635,103 @@ public:
 		return true;
 	}
 	bool number_integer(number_integer_t val) {
+		if (ignore_next_value) {
+			ignore_next_value = false;
+			return true;
+		}
 		if (state == ns_reading_data)
 			return add_data_point(val, current_data_element_subclass);
-
-		if (next_integer == 0)
-			throw std::exception("Recieving an unanticipated integer");
-		*next_integer = val;
-		next_integer = 0;
+		if (next_integer != 0) {
+			*next_integer = val;
+			next_integer = 0;
+		}
+		else if (next_double != 0) {
+			*next_double = val;
+			next_double = 0;
+		}
+		else if (next_double_vector != 0) {
+			next_double_vector->resize(1);
+			(*next_double_vector)[0] = val;
+			if (array_depth == 0)
+				next_double_vector = 0;
+		}
+		else if (next_string_vector != 0) {
+			next_string_vector->resize(1);
+			ns_quick_type_conversion::set((*next_string_vector)[0],val);
+			if (array_depth == 0)
+				next_string_vector = 0;
+		}
+		else throw std::exception("Recieving an unanticipated integer");
 		return true;
 	}
 	bool number_unsigned(number_unsigned_t val) {
+		if (ignore_next_value) {
+			ignore_next_value = false;
+			return true;
+		}
 		if (state == ns_reading_data)
 			return add_data_point(val, current_data_element_subclass);
 
-		if (next_unsigned_integer == 0)
+		if (next_unsigned_integer != 0) {
+			*next_unsigned_integer = val;
+			next_unsigned_integer = 0;
+		}
+		else if (next_double != 0) {
+			*next_double = val;
+			next_double = 0;
+		} 
+		else if (next_double_vector != 0) {
+			next_double_vector->resize(1);
+			(*next_double_vector)[0] = val;	
+			if (array_depth == 0)
+				next_double_vector = 0;
+		}
+		else if (next_string_vector != 0) {
+			next_string_vector->resize(1);
+			ns_quick_type_conversion::set((*next_string_vector)[0], val);
+			if (array_depth == 0)
+				next_string_vector = 0;
+		}
+		else
 			throw std::exception("Recieving an unanticipated unsigned integer");
-		*next_unsigned_integer = val;
-		next_unsigned_integer = 0;
 		return true;
 	}
 
 	bool number_float(number_float_t val, const string_t& s) {
-
+		if (ignore_next_value) {
+			ignore_next_value = false;
+			return true;
+		}
 		if (state == ns_reading_data)
 			return add_data_point(val, current_data_element_subclass);
 
-		if (next_double == 0 && next_double_vector == 0)
-			throw std::exception("Recieving an unanticipated double");
 		if (next_double_vector != 0) {
 			next_double_vector->push_back(val);
+			if (array_depth == 0)
+				next_double_vector = 0;
 		}
-		else {
+		else if (next_double != 0){
 			*next_double = val;
 			next_double = 0;
 		}
+		else if (next_string != 0) {
+			ns_quick_type_conversion::set(*next_string, val);
+		}
+		else if (next_string_vector != 0) {
+			next_string_vector->resize(1);
+			ns_quick_type_conversion::set((*next_string_vector)[0], val);
+			if (array_depth == 0)
+				next_string_vector = 0;
+		}
+		else 
+			throw std::exception("Recieving an unanticipated double");
 		return true;
 	}
 	bool string(string_t& val) {
+		if (ignore_next_value) {
+			ignore_next_value = false;
+			return true;
+		}
 		if (state == ns_reading_data)
 			return add_data_point(val, current_data_element_subclass);
 		if (next_string_vector == 0 && next_string == 0 && next_enum == ns_no_enum)
@@ -659,26 +742,27 @@ public:
 		}
 		else if (next_string_vector != 0) {
 			next_string_vector->push_back(val);
-
+			if (array_depth==0)
+				next_string_vector = 0;
 		}
 		else if (next_enum != ns_no_enum) {
 			switch (next_enum) {
-			case ns_unit_t: data->units.time = ns_wson_units::from_string(val); break;
-			case ns_unit_x: data->units.x = ns_wson_units::from_string(val); break;
-			case ns_unit_y: data->units.y = ns_wson_units::from_string(val); break;
-			case ns_unit_ox: data->units.ox = ns_wson_units::from_string(val); break;
-			case ns_unit_oy: data->units.oy = ns_wson_units::from_string(val); break;
+			case ns_unit_t: data->units.time = ns_wcon_units::from_string(val); break;
+			case ns_unit_x: data->units.x = ns_wcon_units::from_string(val); break;
+			case ns_unit_y: data->units.y = ns_wcon_units::from_string(val); break;
+			case ns_unit_ox: data->units.ox = ns_wcon_units::from_string(val); break;
+			case ns_unit_oy: data->units.oy = ns_wcon_units::from_string(val); break;
 			case ns_unit_n:
 				if (next_unit.empty())
 					throw std::exception("No unit name found");
-				data->units.additional_units[next_unit] = ns_wson_units::from_string(val);
+				data->units.additional_units[next_unit] = ns_wcon_units::from_string(val);
 				next_unit.resize(0);
 				break;
 			case ns_sex:
-				data->metadata.sex = ns_wson_metadata::sex_from_string(val);
+				data->metadata.sex = ns_wcon_metadata::sex_from_string(val);
 				break;
 			case ns_stage:
-				data->metadata.stage = ns_wson_metadata::stage_from_string(val);
+				data->metadata.stage = ns_wcon_metadata::stage_from_string(val);
 				break;
 			default: throw std::exception((std::string("Unknown next enum spec:") + val).c_str());
 			}
@@ -724,12 +808,13 @@ public:
 	bool parse_error(std::size_t position,
 		const std::string& last_token,
 		const  nlohmann::detail::exception & ex) {
+		throw ex;
 		return false;
 	}
 
 	private:
 
-		typedef enum { ns_reading_base_class, ns_reading_data, ns_reading_metadata, ns_reading_files, ns_reading_units } ns_state;
+		typedef enum { ns_reading_base_class, ns_reading_data, ns_reading_metadata, ns_reading_files, ns_reading_units,ns_reading_comment,ns_reading_unrecognized } ns_state;
 		typedef enum { ns_none, ns_metadata_arena, ns_metadata_lab, ns_metadata_interpolate, ns_metadata_software, ns_data_t, ns_data_id, ns_data_x, ns_data_y, ns_data_ox, ns_data_oy, ns_data_n } ns_substate;
 		typedef enum { ns_no_enum, ns_unit_t, ns_unit_x, ns_unit_y, ns_unit_ox, ns_unit_oy, ns_unit_n, ns_ventral, ns_sex, ns_stage } ns_next_enum;
 		typedef enum { ns_unknown_split, ns_split_by_variable, ns_split_by_timepoint } ns_data_split_type;
@@ -740,6 +825,7 @@ public:
 		ns_next_enum next_enum;
 		double * next_double;
 		long * next_integer;
+		bool ignore_next_value;
 		unsigned long * next_unsigned_integer;
 		std::string * next_string;
 		std::string next_data_variable;
@@ -753,7 +839,7 @@ public:
 };
 
 
-nlohmann::json ns_wson_arena::to_json() const {
+nlohmann::json ns_wcon_arena::to_json() const {
 	nlohmann::json j;
 	j["style"] = style;
 	j["orientation"] = orientation;
@@ -761,32 +847,37 @@ nlohmann::json ns_wson_arena::to_json() const {
 	return j;
 }
 
-nlohmann::json ns_wson_interpolation::to_json() const {
+nlohmann::json ns_wcon_interpolation::to_json() const {
 	nlohmann::json j;
 	j["method"] = method;
 	j["values"] = values;
 	return j;
 }
-nlohmann::json ns_wson_tracker::to_json() const {
+nlohmann::json ns_wcon_tracker::to_json() const {
 	nlohmann::json j;
 	j["name"] = name;
 	j["version"] = version;
 	return j;
 }
-nlohmann::json ns_wson_software_metadata::to_json() const {
+nlohmann::json ns_wcon_software_metadata::to_json() const {
 	nlohmann::json j;
 	j["tracker"] = tracker.to_json();
 	j["featureID"] = feature_id;
 	return j;
 }
-nlohmann::json ns_wson_pattern_properties::to_json()const {
+nlohmann::json ns_wcon_pattern_properties::to_json()const {
 	nlohmann::json j;
 	j["title"] = title;
 	j["description"] = description;
 	return j;
 }
 
-std::string ns_wson_metadata::to_string(const ns_wson_metadata::ns_stage & stage) {
+bool ns_wcon_metadata::operator==(const ns_wcon_metadata & r) const {
+	return id == r.id && lab == r.lab && who == r.who && protocol == r.protocol && timestamp == r.timestamp && temperature == r.temperature &&
+		humidity == r.humidity && arena == r.arena && stage == r.stage && sex == r.sex && food == r.food &&
+		media == r.media && strain == r.strain && age == r.age && interpolate == r.interpolate && r.software == r.software && additional_properties == r.additional_properties;
+}
+std::string ns_wcon_metadata::to_string(const ns_wcon_metadata::ns_stage & stage) {
 	char buf[256];
 	switch (stage) {
 	case L1: return "L1";
@@ -801,7 +892,7 @@ std::string ns_wson_metadata::to_string(const ns_wson_metadata::ns_stage & stage
 		throw std::exception((std::string("Unknown stage type") + buf).c_str());
 	}
 }
-ns_wson_metadata::ns_stage ns_wson_metadata::stage_from_string(std::string & stage) {
+ns_wcon_metadata::ns_stage ns_wcon_metadata::stage_from_string(std::string & stage) {
 	if (stage == "L1") return L1;
 	if (stage == "L2") return L2;
 	if (stage == "L3") return L3;
@@ -811,7 +902,7 @@ ns_wson_metadata::ns_stage ns_wson_metadata::stage_from_string(std::string & sta
 	if (stage == "?") return ns_stage_na;
 	throw std::exception((std::string("Unknown stage") + stage).c_str());
 }
- std::string ns_wson_metadata::to_string(const ns_wson_metadata::ns_sex & sex) {
+ std::string ns_wcon_metadata::to_string(const ns_wcon_metadata::ns_sex & sex) {
 	char buf[256];
 	switch (sex) {
 	case hermaphrodite: return "hermaphrodite";
@@ -822,22 +913,22 @@ ns_wson_metadata::ns_stage ns_wson_metadata::stage_from_string(std::string & sta
 		throw std::exception((std::string("Unknown sex type") + buf).c_str());
 	}
 }
- ns_wson_metadata::ns_sex ns_wson_metadata::sex_from_string(std::string & sex) {
+ ns_wcon_metadata::ns_sex ns_wcon_metadata::sex_from_string(std::string & sex) {
 	if (sex == "hermaphrodite") return hermaphrodite;
 	if (sex == "male") return male;
 	if (sex == "?") return ns_sex_na;
 	std::cerr << "Unknown sex specifier" << sex;
 	return ns_sex_na;
 }
- bool ns_wson_metadata::is_specified() const {
+ bool ns_wcon_metadata::is_specified() const {
 	 return to_json().size() > 0;
  }
- nlohmann::json ns_wson_metadata::to_json() const {
+ nlohmann::json ns_wcon_metadata::to_json() const {
 	 nlohmann::json j;
 	 if (!id.empty()) j["id"] = id;
 	 if (!lab.empty()) j["lab"] = lab;
 	 if (!who.empty()) j["who"] = who;
-	 if (timestamp != 0) j["timestamp"] = timestamp;
+	 if (!timestamp.empty()) j["timestamp"] = timestamp;
 	 if (temperature != -1) j["temperature"] = temperature;
 	 if (humidity != -1) j["humidity"] = humidity;
 	 if (arena.specified()) j["arena"] = arena.to_json();
@@ -849,13 +940,13 @@ ns_wson_metadata::ns_stage ns_wson_metadata::stage_from_string(std::string & sta
 	 if (age != -1) j["age"] = age;
 	 {
 		 nlohmann::json tmp = nlohmann::json::array();
-		 for (std::vector<ns_wson_interpolation>::const_iterator p = interpolate.begin(); p != interpolate.end(); p++)
+		 for (std::vector<ns_wcon_interpolation>::const_iterator p = interpolate.begin(); p != interpolate.end(); p++)
 			 if (p->specified()) tmp.push_back(p->to_json());
 		 if (!tmp.empty())j["interpolate"] = tmp;
 	 }
 	 {
 		 nlohmann::json tmp = nlohmann::json::array();
-		 for (std::vector<ns_wson_software_metadata>::const_iterator p = software.begin(); p != software.end(); p++)
+		 for (std::vector<ns_wcon_software_metadata>::const_iterator p = software.begin(); p != software.end(); p++)
 			 if (p->specified()) tmp.push_back(p->to_json());
 		 if (!tmp.empty())
 			 j["software"] = tmp;
@@ -864,30 +955,37 @@ ns_wson_metadata::ns_stage ns_wson_metadata::stage_from_string(std::string & sta
 	 if (!additional_properties.empty())j["additionalProperties"] = additional_properties;
 	 return j;
  }
-
-std::string ns_wson_units::to_string(const ns_wson_units::ns_units & t) {
+ bool ns_wcon_units::operator==(const ns_wcon_units & r) const {
+	 return time == r.time && x == r.x &&  y == r.y && ox == r.ox && oy == r.oy &&
+		 additional_units == r.additional_units && additional_properties == r.additional_properties;
+ }
+std::string ns_wcon_units::to_string(const ns_wcon_units::ns_units & t) {
 	 switch (t) {
-	 case ns_wson_nanoseconds: return "ns";
-	 case ns_wson_microseconds: return "us";
-	 case ns_wson_milliseconds: return "ms";
-	 case ns_wson_seconds: return "s";
-	 case ns_wson_minutes: return "min";
-	 case ns_wson_hours: return "h";
-	 case ns_wson_days: return "d";
-	 case ns_wson_years: return "y";
-	 case ns_wson_um: return "um";
-	 case ns_wson_mm: return "mm";
-	 case ns_wson_cm: return "cm";
-	 case ns_wson_nm: return "nm";
-	 case ns_wson_m:return "m";
-	 case ns_wson_km:return "km";
-	 case ns_wson_inches:return "in";
-	 case ns_wson_feet:return "ft";
-	 case ns_wson_yards:return "yd";
-	 case ns_wson_miles:return "mi";
-	 case ns_wson_degrees_F:return "F";
-	 case ns_wson_degrees_C:return "C";
-	 case ns_wson_degrees_K:return "K";
+	 case ns_wcon_nanoseconds: return "ns";
+	 case ns_wcon_microseconds: return "us";
+	 case ns_wcon_milliseconds: return "ms";
+	 case ns_wcon_seconds: return "s";
+	 case ns_wcon_minutes: return "min";
+	 case ns_wcon_hours: return "h";
+	 case ns_wcon_days: return "d";
+	 case ns_wcon_years: return "y";
+	 case ns_wcon_um: return "um";
+	 case ns_wcon_mm: return "mm";
+	 case ns_wcon_cm: return "cm";
+	 case ns_wcon_nm: return "nm";
+	 case ns_wcon_m:return "m";
+	 case ns_wcon_km:return "km";
+	 case ns_wcon_inches:return "in";
+	 case ns_wcon_feet:return "ft";
+	 case ns_wcon_yards:return "yd";
+	 case ns_wcon_miles:return "mi";
+	 case ns_wcon_mm_per_second: return "mm/s";
+	 case ns_wcon_m_per_second: return "m/s";
+	 case ns_wcon_inverse_meters: return "1/m";
+	 case ns_wcon_inverse_millimeters: return "1/mm";
+	 case ns_wcon_degrees_F:return "F";
+	 case ns_wcon_degrees_C:return "C";
+	 case ns_wcon_degrees_K:return "K";
 	 case ns_radians:return "rad";
 	 case ns_degrees:return "degrees";
 	 case ns_percent:return "%";
@@ -898,7 +996,7 @@ std::string ns_wson_units::to_string(const ns_wson_units::ns_units & t) {
 		 throw std::exception((std::string("Unknown unit:") + buf).c_str());
 	 }
  }
-bool ns_wson_units::matches_singular(const std::string & subject, const char * test) {
+bool ns_wcon_units::matches_singular(const std::string & subject, const char * test) {
 	 for (unsigned int i = 0; i < subject.size(); i++) {
 		 if (test[i] == 0) {
 			 if (subject[i] == 's') return true;
@@ -909,28 +1007,32 @@ bool ns_wson_units::matches_singular(const std::string & subject, const char * t
 	 }
 	 return true;
  }
-ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
-	 if (str == "ns" || matches_singular(str, "nanosecond")) return ns_wson_nanoseconds;
-	 if (str == "us" || matches_singular(str, "microsecond")) return ns_wson_microseconds;
-	 if (str == "ms" || matches_singular(str, "millisecond")) return ns_wson_milliseconds;
-	 if (str == "s" || matches_singular(str, "second")) return ns_wson_seconds;
-	 if (str == "min" || matches_singular(str, "minute")) return ns_wson_minutes;
-	 if (str == "h" || matches_singular(str, "hour")) return ns_wson_hours;
-	 if (str == "d" || matches_singular(str, "day")) return ns_wson_days;
-	 if (str == "y" || matches_singular(str, "year")) return ns_wson_years;
-	 if (str == "nm" || matches_singular(str, "nanometer")) return ns_wson_nm;
-	 if (str == "um" || matches_singular(str, "micron")) return ns_wson_um;
-	 if (str == "mm" || matches_singular(str, "millimeter")) return ns_wson_mm;
-	 if (str == "cm" || matches_singular(str, "centimeter")) return ns_wson_cm;
-	 if (str == "m" || matches_singular(str, "meter")) return ns_wson_m;
-	 if (str == "km" || matches_singular(str, "kilometer")) return ns_wson_km;
-	 if (str == "in" || matches_singular(str, "inche")) return ns_wson_inches;
-	 if (str == "ft" || str == "foot" || str == "feet") return ns_wson_feet;
-	 if (str == "yd" || matches_singular(str, "yard")) return ns_wson_yards;
-	 if (str == "mi" || matches_singular(str, "mile")) return ns_wson_miles;
-	 if (str == "F" || matches_singular(str, "fahrenheit")) return ns_wson_degrees_F;
-	 if (str == "C" || matches_singular(str, "centigrade")) return ns_wson_degrees_C;
-	 if (str == "K" || matches_singular(str, "kelvin")) return ns_wson_degrees_K;
+ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
+	 if (str == "ns" || matches_singular(str, "nanosecond")) return ns_wcon_nanoseconds;
+	 if (str == "us" || matches_singular(str, "microsecond")) return ns_wcon_microseconds;
+	 if (str == "ms" || matches_singular(str, "millisecond")) return ns_wcon_milliseconds;
+	 if (str == "s" || matches_singular(str, "second")) return ns_wcon_seconds;
+	 if (str == "min" || matches_singular(str, "minute")) return ns_wcon_minutes;
+	 if (str == "h" || matches_singular(str, "hour")) return ns_wcon_hours;
+	 if (str == "d" || matches_singular(str, "day")) return ns_wcon_days;
+	 if (str == "y" || matches_singular(str, "year")) return ns_wcon_years;
+	 if (str == "nm" || matches_singular(str, "nanometer")) return ns_wcon_nm;
+	 if (str == "um" || matches_singular(str, "micron")) return ns_wcon_um;
+	 if (str == "mm" || matches_singular(str, "millimeter")) return ns_wcon_mm;
+	 if (str == "cm" || matches_singular(str, "centimeter")) return ns_wcon_cm;
+	 if (str == "m" || matches_singular(str, "meter")) return ns_wcon_m;
+	 if (str == "km" || matches_singular(str, "kilometer")) return ns_wcon_km;
+	 if (str == "in" || matches_singular(str, "inche")) return ns_wcon_inches;
+	 if (str == "ft" || str == "foot" || str == "feet") return ns_wcon_feet;
+	 if (str == "yd" || matches_singular(str, "yard")) return ns_wcon_yards;
+	 if (str == "mi" || matches_singular(str, "mile")) return ns_wcon_miles;
+	 if (str == "mm/s") return ns_wcon_mm_per_second;
+	 if (str == "m/s") return ns_wcon_m_per_second;
+	 if (str == "1/m") return ns_wcon_inverse_meters;
+	 if (str == "1/mm") return ns_wcon_inverse_millimeters;
+	 if (str == "F" || matches_singular(str, "fahrenheit")) return ns_wcon_degrees_F;
+	 if (str == "C" || matches_singular(str, "centigrade")) return ns_wcon_degrees_C;
+	 if (str == "K" || matches_singular(str, "kelvin")) return ns_wcon_degrees_K;
 	 if (str == "rad" || matches_singular(str, "radian")) return ns_radians;
 	 if (str == "%" || matches_singular(str, "percent")) return ns_percent;
 	 if (str == "degrees") return ns_degrees;
@@ -939,7 +1041,7 @@ ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
 
  }
  
- nlohmann::json ns_wson_units::to_json() const {
+ nlohmann::json ns_wcon_units::to_json() const {
 	 nlohmann::json j;
 	 j["t"] = to_string(time);
 	 j["x"] = to_string(x);
@@ -956,9 +1058,9 @@ ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
 	 return j;
  }
 
- bool ns_wson_file_list_entry::is_specified() const { return !prev.empty() || !next.empty(); }
+ bool ns_wcon_file_list_entry::is_specified() const { return !prev.empty() || !next.empty(); }
 
- nlohmann::json ns_wson_file_list_entry::to_json() const {
+ nlohmann::json ns_wcon_file_list_entry::to_json() const {
 	 nlohmann::json j;
 	 if (!prev.empty()) j["prev"] = prev;
 	 if (!prev.empty()) j["current"] = current;
@@ -966,8 +1068,15 @@ ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
 	 return j;
  }
 
-
- nlohmann::json ns_wson_default_data_record_element::to_json() const {
+ bool ns_wcon_default_data_record_element::operator==(const ns_wcon_default_data_record_element & a) const {
+	 return ns_quick_type_conversion::compare_double(t, a.t) &&
+		 ns_quick_type_conversion::compare_double(x, a.x) &&
+		 ns_quick_type_conversion::compare_double(y, a.y) &&
+		 ns_quick_type_conversion::compare_double(ox, a.ox) &&
+		 ns_quick_type_conversion::compare_double(oy, a.oy) &&
+		 id == a.id;
+ }
+ nlohmann::json ns_wcon_default_data_record_element::to_json() const {
 	 nlohmann::json j;
 	 j["id"] = id;
 	 j["t"] = t;
@@ -981,14 +1090,14 @@ ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
  }
 
  template<class timepoint_data_t>
- nlohmann::json  ns_wson_data_record<timepoint_data_t>::to_json(bool split_timepoints) const {
+ nlohmann::json  ns_wcon_data_record<timepoint_data_t>::to_json(bool split_timepoints) const {
 	 return (split_timepoints) ? to_json_split_timepoints() : to_json_split_measurements();
  }
 
  template<class timepoint_data_t>
- nlohmann::json ns_wson_data_record<timepoint_data_t>::to_json_split_timepoints() const {
+ nlohmann::json ns_wcon_data_record<timepoint_data_t>::to_json_split_timepoints() const {
 	 if (data.size() == 0)
-		 throw std::exception(" ns_wson_data_record::to_json()::No data was provided");
+		 throw std::exception(" ns_wcon_data_record::to_json()::No data was provided");
 	 nlohmann::json j;
 	 std::vector<nlohmann::json> tmp;
 	 tmp.reserve(data.size());
@@ -998,9 +1107,9 @@ ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
  }
 
  template<class timepoint_data_t>
- nlohmann::json ns_wson_data_record<timepoint_data_t>::to_json_split_measurements() const {
+ nlohmann::json ns_wcon_data_record<timepoint_data_t>::to_json_split_measurements() const {
 	 if (data.size() == 0)
-		 throw std::exception(" ns_wson_data_record::to_json()::No data was provided");
+		 throw std::exception(" ns_wcon_data_record::to_json()::No data was provided");
 	 nlohmann::json j;
 
 	 std::vector<double> tmp;
@@ -1033,7 +1142,7 @@ ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
 
 	 //add any additional time-varying fields
 	 for (int k = 0; k < typename timepoint_data_t::number_of_additional_json_fields(); k++) {
-		 ns_wson_data_element_member_type type = typename timepoint_data_t::additional_json_field_type(k);
+		 ns_wcon_data_element_member_type type = typename timepoint_data_t::additional_json_field_type(k);
 		 switch (type) {
 		 case ns_unknown:
 			 std::cerr << "Encountered an unknown field type for spec" << k << "\n"; break;
@@ -1096,7 +1205,7 @@ ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
 
  };
  template<class timepoint_data_t>
- void ns_wson_data_record<timepoint_data_t>::sort_by_time_and_id() {
+ void ns_wcon_data_record<timepoint_data_t>::sort_by_time_and_id() {
 	 std::sort(data.begin(), data.end(), ns_data_record_sorter());
  }
 
@@ -1120,7 +1229,7 @@ ns_wson_units::ns_units ns_wson_units::from_string(const std::string & str) {
 template<class timepoint_data_t>
 void ns_worm_tracker_commons_object<timepoint_data_t>::from_stream(std::istream & in) {
 
-	ns_wson_sax_parser<timepoint_data_t> sax_parser(*this);
+	ns_wcon_sax_parser<timepoint_data_t> sax_parser(*this);
 	nlohmann::detail::input_adapter adaptor(in);
 	nlohmann::detail::parser<nlohmann::json> parser(adaptor, nullptr);
 	parser.sax_parse(&sax_parser);

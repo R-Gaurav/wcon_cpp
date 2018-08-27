@@ -15,12 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\ns_wson.h">
+    <ClInclude Include="..\ns_wcon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ns_wcon_rich_data_record.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ns_wson_test.cpp">
+    <ClCompile Include="..\ns_wcon_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
