@@ -27,11 +27,12 @@
 // which implements the full schema.
 //
 // Known limitations:
-// 1.  Support for user defined variables is uneven
-// 2.  No support for units defined in terms of algebric combinations of other units
-// 3.  Specifications for unit outside of the standard single "units" object are ignored
-// 4.  Unrecognized fields trigger output to cerr, which may be unattended
-// 5.  No integrated DEFLATE support--library users must do this themselves.
+// 1.  Does not compile with gcc 4.8.x do to json library incompatability
+// 2.  Support for user defined variables is uneven
+// 3.  No support for units defined in terms of algebric combinations of other units
+// 4.  Specifications for unit outside of the standard single "units" object are ignored
+// 5.  Unrecognized fields trigger output to cerr, which may be unattended
+// 6.  No integrated DEFLATE support--library users must do this themselves.
 //
 //////////////////////////////////////////////////////////////////////////
 

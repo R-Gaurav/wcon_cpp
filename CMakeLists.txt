@@ -25,7 +25,7 @@ LIST(APPEND NS_LN ${NLOHMANN_JSON_LIBRARIES})
     set (CMAKE_CXX_STANDARD 11)
   endif ()
 
-add_definitions();
+#add_definitions();
 
    
 #build base library used for image server and worm browser
