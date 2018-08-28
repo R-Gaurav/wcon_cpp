@@ -66,20 +66,20 @@ public:
 	static void set(double & d, const double & s) { d = s; }
 	static void set(double & d, const uint32_t & s) { d = s; }
 	static void set(double & d, const int32_t & s) { d = s; }
-	static void set(double & d, const uint64_t & s) { d = s; }
-	static void set(double & d, const int64_t & s) { d = s; }
+	static void set(double & d, const uint64_t & s) { d = static_cast<double>(s); }
+	static void set(double & d, const int64_t & s) { d = static_cast<double>(s); }
 	static void set(double & d, const std::string & s) { d = atof(s.c_str()); }
 	static void set(uint32_t & d, const uint32_t & s) { d = s; }
 	static void set(uint32_t & d, uint32_t & s) { d = s; }
-	static void set(uint32_t & d, const double & s) { d = s; }
-	static void set(uint32_t & d, const uint64_t & s) { d = s; }
-	static void set(uint32_t & d, const int64_t & s) { d = s; }
+	static void set(uint32_t & d, const double & s) { d = static_cast<uint32_t>(s); }
+	static void set(uint32_t & d, const uint64_t & s) { d = static_cast<uint32_t>(s); }
+	static void set(uint32_t & d, const int64_t & s) { d = static_cast<uint32_t>(s); }
 	static void set(uint32_t & d, const std::string & s) { d = atol(s.c_str()); }
 	static void set(int32_t & d, const int32_t & s) { d = s; }
 	static void set(int32_t & d, const uint32_t & s) { d = s; }
-	static void set(int32_t & d, const double & s) { d = s; }
-	static void set(int32_t & d, const uint64_t & s) { d = s; }
-	static void set(int32_t & d, const int64_t & s) { d = s; }
+	static void set(int32_t & d, const double & s) { d = static_cast<uint32_t>(s); }
+	static void set(int32_t & d, const uint64_t & s) { d = static_cast<uint32_t>(s); }
+	static void set(int32_t & d, const int64_t & s) { d = static_cast<uint32_t>(s); }
 	static void set(int32_t & d, const std::string & s) { d = atol(s.c_str()); }
 
 	static void set(std::vector<double> & d, const std::vector<double> & s) { d = s; }
@@ -90,8 +90,8 @@ public:
 	}
 	static void set(std::vector<double> & d, const double & s) { d.resize(0); d.push_back(s); }
 	static void set(std::vector<double> & d, const uint32_t & s) { d.resize(0); d.push_back(s); }
-	static void set(std::vector<double> & d, const int64_t & s) { d.resize(0); d.push_back(s); }
-	static void set(std::vector<double> & d, const uint64_t & s) { d.resize(0); d.push_back(s); }
+	static void set(std::vector<double> & d, const int64_t & s) { d.resize(0); d.push_back(static_cast<double>(s)); }
+	static void set(std::vector<double> & d, const uint64_t & s) { d.resize(0); d.push_back(static_cast<double>(s)); }
 	static void set(std::vector<double> & d, const std::string & s) { d.resize(0); d.push_back(atof(s.c_str())); }
 
 	static bool compare_double(const double & a, const double & b, const double epsillon = .0000001) {
@@ -653,12 +653,12 @@ public:
 			next_integer = 0;
 		}
 		else if (next_double != 0) {
-			*next_double = val;
+			ns_quick_type_conversion::set(*next_double,val);
 			next_double = 0;
 		}
 		else if (next_double_vector != 0) {
 			next_double_vector->resize(1);
-			(*next_double_vector)[0] = val;
+			ns_quick_type_conversion::set((*next_double_vector)[0],val);
 			if (array_depth == 0)
 				next_double_vector = 0;
 		}
@@ -684,12 +684,12 @@ public:
 			next_unsigned_integer = 0;
 		}
 		else if (next_double != 0) {
-			*next_double = val;
+			ns_quick_type_conversion::set(*next_double,val);
 			next_double = 0;
 		}
 		else if (next_double_vector != 0) {
 			next_double_vector->resize(1);
-			(*next_double_vector)[0] = val;
+			ns_quick_type_conversion::set((*next_double_vector)[0],val);
 			if (array_depth == 0)
 				next_double_vector = 0;
 		}
@@ -831,9 +831,9 @@ public:
 		unsigned long object_depth, array_depth;
 		ns_next_enum next_enum;
 		double * next_double;
-		long * next_integer;
+		int64_t * next_integer;
 		bool ignore_next_value;
-		unsigned long * next_unsigned_integer;
+		uint64_t * next_unsigned_integer;
 		std::string * next_string;
 		std::string next_data_variable;
 		std::size_t next_data_index;

@@ -234,7 +234,7 @@ int main()
 
 	}
 	catch (std::exception & e) {
-		std::cerr << e.what() << "\n";
+		std::cerr << "Error: " << e.what() << "\n";
 		char a; a = std::cin.get();
 		return 1;
 	}

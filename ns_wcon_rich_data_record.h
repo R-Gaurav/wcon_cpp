@@ -236,7 +236,7 @@ bool ns_wcon_rich_data_record_element::set_value(const std::string & key, const 
 			json_reader_current_walk_n_index++;
 		}
 		else if (key == "4") {
-			walk.four = val;
+			ns_quick_type_conversion::set(walk.four,val);
 		}
 		else {
 			std::cerr << "Encountered unexpected data variable " << key << "\n";
