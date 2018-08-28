@@ -26,23 +26,29 @@
 // The extendability of this parser/writer is demonstrated in ns_wcon_rich_data_record
 // which implements the full schema.
 //
+// Tested using gcc 4.8.x and Microsoft Visual Studio 2017
+//
 // Known limitations:
-// 1.  Does not compile with gcc 4.8.x do to json library incompatability
-// 2.  Support for user defined variables is uneven
-// 3.  No support for units defined in terms of algebric combinations of other units
-// 4.  Specifications for unit outside of the standard single "units" object are ignored
-// 5.  Unrecognized fields trigger output to cerr, which may be unattended
-// 6.  No integrated DEFLATE support--library users must do this themselves.
+// 1.  Support for user defined variables is uneven
+// 2.  No support for units defined in terms of algebric combinations of other units
+// 3.  Specifications for unit outside of the standard single "units" object are ignored
+// 4.  Unrecognized fields trigger output to cerr, which may be unattended
+// 5.  No integrated DEFLATE support--library users must zip files themselves.
 //
 //////////////////////////////////////////////////////////////////////////
 
-#include <nlohmann/json.hpp>
+
 #include <string>
 #include <vector>
 #include <map>
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+//The json library does not officially support gcc 4.8.x
+//but in this application there seems to be no problems.
+//
+#define JSON_SKIP_UNSUPPORTED_COMPILER_CHECK 0
+#include <nlohmann/json.hpp>
 
 #undef NS_wcon_VERBOSE
 //#define NS_wcon_VERBOSE
