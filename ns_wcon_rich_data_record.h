@@ -3,14 +3,14 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // ns_wcon_rich_data_record.h
-// 
+//
 // This class ns_wcon_rich_data_record_element implements the parser/writer for the full
 // Worm tracker Commons Object Notation schema
 
 // wcon_schema.json // as specified in August 2018.
 // https://github.com/openworm/tracker-commons
 //
-// Implemented by Nicholas Stroustrup 
+// Implemented by Nicholas Stroustrup
 // Centre for Genomic Regulation
 // 2018
 // https://github.com/nstroustrup
@@ -124,7 +124,7 @@ std::string ns_wcon_rich_data_record_element::to_string(const ns_wcon_rich_data_
 	case L: return "L";
 	case R: return "R";
 	case head_NA: return "?";
-	default:throw std::exception("Unkonwn head spec");
+	default:throw std::runtime_error("Unkonwn head spec");
 	}
 }
 
@@ -133,20 +133,20 @@ std::string ns_wcon_rich_data_record_element::to_string(const ns_wcon_rich_data_
 	case CW: return "CW";
 	case CCW: return "CCW";
 	case ventral_NA: return "?";
-	default:throw std::exception("Unkonwn head spec");
+	default:throw std::runtime_error("Unkonwn head spec");
 	}
 }
 ns_wcon_rich_data_record_element::ns_head ns_wcon_rich_data_record_element::head_from_string(const std::string & str) {
 	if (str == "L") return L;
 	if (str == "R") return R;
 	if (str == "?") return head_NA;
-	throw std::exception((std::string("Unknown head spec ") + str).c_str());
+	throw std::runtime_error((std::string("Unknown head spec ") + str).c_str());
 }
 ns_wcon_rich_data_record_element::ns_ventral ns_wcon_rich_data_record_element::ventral_from_string(const std::string & str) {
 	if (str == "CW") return CW;
 	if (str == "CCW") return CCW;
 	if (str == "?") return ventral_NA;
-	throw std::exception((std::string("Unknown ventral spec ") + str).c_str());
+	throw std::runtime_error((std::string("Unknown ventral spec ") + str).c_str());
 }
 nlohmann::json ns_wcon_rich_data_record_element::to_json() const {
 	nlohmann::json j;
@@ -177,8 +177,8 @@ nlohmann::json ns_wcon_rich_data_record_element::add_subclass(int i) const {
 		if (walk.is_specified())
 			j = walk.to_json();
 	}
-	else 
-		throw std::exception("Unknown subclass");
+	else
+		throw std::runtime_error("Unknown subclass");
 	return j;
 }
 template<class T>
@@ -215,7 +215,7 @@ bool ns_wcon_rich_data_record_element::set_value(const std::string & key, const 
 			ns_quick_type_conversion::set(tmp, val);
 			ventral = ventral_from_string(tmp);
 		}
-		else { 
+		else {
 			std::cerr << "Encountered unexpected data variable " << key << "\n";
 			std::size_t s(additional_fields[subclass_name][key].size());
 			additional_fields[subclass_name][key].resize(s + 1);
@@ -259,7 +259,7 @@ std::string ns_wcon_rich_data_record_element::additional_json_field_name(const i
 	case 6: return "ventral";
 	case 7: return ns_wcon_pixel_walk_record::json_name();
 	default:
-		throw std::exception("Unknown field id");
+		throw std::runtime_error("Unknown field id");
 	}
 }
 
@@ -288,7 +288,7 @@ double ns_wcon_rich_data_record_element::get_additional_json_field_value_double(
 	case 0: return cx;
 	case 1: return cy;
 	default:
-		throw std::exception("Unknown field id");
+		throw std::runtime_error("Unknown field id");
 	}
 }
 std::string ns_wcon_rich_data_record_element::get_additional_json_field_value_string(const int &i) const {
@@ -297,7 +297,7 @@ std::string ns_wcon_rich_data_record_element::get_additional_json_field_value_st
 	case 5: return to_string(head);
 	case 6: return to_string(ventral);
 	default:
-		throw std::exception("Unknown field id");
+		throw std::runtime_error("Unknown field id");
 	}
 	return buf;
 }
@@ -307,11 +307,11 @@ const std::vector<double> * ns_wcon_rich_data_record_element::get_additional_jso
 	case 3: return &py;
 	case 4: return &ptail;
 	default:
-		throw std::exception("Unknown field id");
+		throw std::runtime_error("Unknown field id");
 	}
 }
 const std::vector < std::string > * ns_wcon_rich_data_record_element::get_additional_json_field_value_vector_string(const int &i) const {
-	throw std::exception("No string vectors supported");
+	throw std::runtime_error("No string vectors supported");
 }
 
 nlohmann::json ns_wcon_pixel_walk_record::to_json() const {

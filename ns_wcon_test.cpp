@@ -6,10 +6,10 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // ns_wcon_test.cpp
-// 
+//
 // ns_worm_tracker_commons_object implements an extendable parser/writer for the
 // Worm tracker Commons Object Notation schema
-// wcon_schema.json 
+// wcon_schema.json
 // as specified in August 2018.
 //
 // This file demonstrates de novo construction of wcon
@@ -18,7 +18,7 @@
 // which implements the full schema.
 //
 //
-// Nicholas Stroustrup 
+// Nicholas Stroustrup
 // Centre for Genomic Regulation
 // 2018
 //
@@ -170,16 +170,16 @@ int main()
 			infile >> obj;
 
 			obj.data.sort_by_time_and_id();
-			if (object2 == obj) 
+			if (object2 == obj)
 				std::cout << "Test 6 Passed\n";
-			else throw std::exception("Failed test 6");
+			else throw std::runtime_error("Failed test 6");
 			infile.close();
 		}
 		//////////////////
 		//TEST 7: Read the complex wcon object in split format
 		//////////////////
 		if (1) {
-			std::vector<std::string> test_files = 
+			std::vector<std::string> test_files =
 			{ "intermediate.wcon",
 				"maximal_0.wcon",
 				"maximal_1.wcon",

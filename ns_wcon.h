@@ -3,14 +3,14 @@
 //////////////////////////////////////////////////////////////////////////
 //
 // ns_wcon.h
-// 
+//
 // The class ns_worm_tracker_commons_object implements an extendable parser/writer for the
 // Worm tracker Commons Object Notation schema
-// wcon_schema.json 
+// wcon_schema.json
 // as specified in August 2018.
 // https://github.com/openworm/tracker-commons
 //
-// Implemented by Nicholas Stroustrup 
+// Implemented by Nicholas Stroustrup
 // Centre for Genomic Regulation
 // 2018
 // https://github.com/nstroustrup
@@ -40,50 +40,50 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <strstream>
+#include <sstream>
 #include <iostream>
 #include <algorithm>
 
-#undef NS_wcon_VERBOSE 
+#undef NS_wcon_VERBOSE
 //#define NS_wcon_VERBOSE
 
 //convert between various types
 class ns_quick_type_conversion {
 public:
 	static void set(std::string & d, const std::string & s) { d = s; }
-	static void set(std::string & d, const double & s) { std::strstream ss;  ss << s; d = ss.str(); }
-	static void set(std::string & d, const unsigned long & s) { std::strstream ss;  ss << s; d = ss.str(); }
-	static void set(std::string & d, const long & s) { std::strstream ss;  ss << s; d = ss.str(); }
-	static void set(std::string & d, const uint64_t & s) { std::strstream ss;  ss << s; d = ss.str(); }
-	static void set(std::string & d, const int64_t & s) { std::strstream ss;  ss << s; d = ss.str(); }
+	static void set(std::string & d, const double & s) { std::stringstream ss;  ss << s; d = ss.str(); }
+	static void set(std::string & d, const uint32_t & s) { std::stringstream ss;  ss << s; d = ss.str(); }
+	static void set(std::string & d, const int32_t & s) { std::stringstream ss;  ss << s; d = ss.str(); }
+	static void set(std::string & d, const uint64_t & s) { std::stringstream ss;  ss << s; d = ss.str(); }
+	static void set(std::string & d, const int64_t & s) { std::stringstream ss;  ss << s; d = ss.str(); }
 
 	static void set(double & d, const double & s) { d = s; }
-	static void set(double & d, const unsigned long & s) { d = s; }
-	static void set(double & d, const long & s) { d = s; }
+	static void set(double & d, const uint32_t & s) { d = s; }
+	static void set(double & d, const int32_t & s) { d = s; }
 	static void set(double & d, const uint64_t & s) { d = s; }
 	static void set(double & d, const int64_t & s) { d = s; }
 	static void set(double & d, const std::string & s) { d = atof(s.c_str()); }
-	static void set(unsigned long & d, const unsigned long & s) { d = s; }
-	static void set(unsigned long & d, const long & s) { d = s; }
-	static void set(unsigned long & d, const double & s) { d = s; }
-	static void set(unsigned long & d, const uint64_t & s) { d = s; }
-	static void set(unsigned long & d, const int64_t & s) { d = s; }
-	static void set(unsigned long & d, const std::string & s) { d = atol(s.c_str()); }
-	static void set(long & d, const long & s) { d = s; }
-	static void set(long & d, const unsigned long & s) { d = s; }
-	static void set(long & d, const double & s) { d = s; }
-	static void set(long & d, const uint64_t & s) { d = s; }
-	static void set(long & d, const int64_t & s) { d = s; }
-	static void set(long & d, const std::string & s) { d = atol(s.c_str()); }
+	static void set(uint32_t & d, const uint32_t & s) { d = s; }
+	static void set(uint32_t & d, uint32_t & s) { d = s; }
+	static void set(uint32_t & d, const double & s) { d = s; }
+	static void set(uint32_t & d, const uint64_t & s) { d = s; }
+	static void set(uint32_t & d, const int64_t & s) { d = s; }
+	static void set(uint32_t & d, const std::string & s) { d = atol(s.c_str()); }
+	static void set(int32_t & d, const int32_t & s) { d = s; }
+	static void set(int32_t & d, const uint32_t & s) { d = s; }
+	static void set(int32_t & d, const double & s) { d = s; }
+	static void set(int32_t & d, const uint64_t & s) { d = s; }
+	static void set(int32_t & d, const int64_t & s) { d = s; }
+	static void set(int32_t & d, const std::string & s) { d = atol(s.c_str()); }
 
 	static void set(std::vector<double> & d, const std::vector<double> & s) { d = s; }
-	static void set(std::vector<double> & d, const std::vector<std::string> & s) { 
+	static void set(std::vector<double> & d, const std::vector<std::string> & s) {
 		d.resize(s.size());
 		for (std::size_t i= 0; i < s.size(); i++)
 			d[i] = atof(s[i].c_str());
 	}
 	static void set(std::vector<double> & d, const double & s) { d.resize(0); d.push_back(s); }
-	static void set(std::vector<double> & d, const unsigned long & s) { d.resize(0); d.push_back(s); }
+	static void set(std::vector<double> & d, const uint32_t & s) { d.resize(0); d.push_back(s); }
 	static void set(std::vector<double> & d, const int64_t & s) { d.resize(0); d.push_back(s); }
 	static void set(std::vector<double> & d, const uint64_t & s) { d.resize(0); d.push_back(s); }
 	static void set(std::vector<double> & d, const std::string & s) { d.resize(0); d.push_back(atof(s.c_str())); }
@@ -98,7 +98,7 @@ public:
 	static bool compare_double_arrays(const std::vector<double> & a, const std::vector<double> & b, const double epsillon=.0000001) {
 		if (a.size() != b.size())
 			return false;
-		for (std::size_t i = 0; i < a.size(); i++) 
+		for (std::size_t i = 0; i < a.size(); i++)
 			if (!compare_double(a[i],b[i]))
 				return false;
 		return true;
@@ -173,8 +173,8 @@ struct ns_wcon_metadata {
 	ns_wcon_arena arena;
 	ns_stage stage;
 	ns_sex sex;
-	std::string food, 
-		media, 
+	std::string food,
+		media,
 		strain;
 	double age;
 	std::vector< ns_wcon_interpolation> interpolate;
@@ -189,9 +189,9 @@ struct ns_wcon_metadata {
 //corresponds to similarly named object in WCON schema
 struct ns_wcon_units {
 	typedef enum {
-		ns_wcon_nanoseconds, ns_wcon_microseconds,ns_wcon_milliseconds, ns_wcon_seconds, 
-		ns_wcon_minutes, ns_wcon_hours, ns_wcon_days, ns_wcon_years, 
-		ns_wcon_nm, ns_wcon_um,ns_wcon_mm, ns_wcon_cm, ns_wcon_m, ns_wcon_km, 
+		ns_wcon_nanoseconds, ns_wcon_microseconds,ns_wcon_milliseconds, ns_wcon_seconds,
+		ns_wcon_minutes, ns_wcon_hours, ns_wcon_days, ns_wcon_years,
+		ns_wcon_nm, ns_wcon_um,ns_wcon_mm, ns_wcon_cm, ns_wcon_m, ns_wcon_km,
 		ns_wcon_inches, ns_wcon_feet, ns_wcon_yards, ns_wcon_miles,
 		ns_wcon_mm_per_second, ns_wcon_m_per_second, ns_wcon_inverse_meters,ns_wcon_inverse_millimeters,
 		ns_wcon_degrees_F,ns_wcon_degrees_C, ns_wcon_degrees_K,
@@ -206,7 +206,7 @@ struct ns_wcon_units {
 
 
 	bool operator==(const ns_wcon_units & r) const;
-	
+
 	static std::string to_string(const ns_units & t);
 	static bool matches_singular(const std::string & subject, const char * test);
 	static ns_units from_string(const std::string & str);
@@ -240,7 +240,7 @@ public:
 	//fields required by extendible data type implementation
 	nlohmann::json to_json() const;
 
-	nlohmann::json add_subclass(int i) const {throw std::exception("no subclasses!"); return nlohmann::json();}
+	nlohmann::json add_subclass(int i) const {throw std::runtime_error("no subclasses!"); return nlohmann::json();}
 	const double & get_t() const { return t; }
 	const double & get_x() const { return x; }
 	const double & get_y() const { return y; }
@@ -257,7 +257,7 @@ public:
 	const std::vector<double> * get_additional_json_field_value_vector_double(const int &i) const { return 0; }
 	const std::vector<std::string> *get_additional_json_field_value_vector_string(const int &i) const { return 0; }
 	nlohmann::json get_additional_json_field_value_subclass(const int &i) const {
-		throw std::exception("no subclasses!"); return nlohmann::json();
+		throw std::runtime_error("no subclasses!"); return nlohmann::json();
 	}
 
 	static bool json_field_is_a_known_subclass(const std::string & key) { return false; }
@@ -282,7 +282,7 @@ public:
 
 	void sort_by_time_and_id();
 	bool operator ==(const ns_wcon_data_record<timepoint_data_t> & d) const {
-		if (data.size() != d.data.size()) 
+		if (data.size() != d.data.size())
 			return false;
 		for (std::size_t i = 0; i < data.size(); i++) {
 			if (!(data[i] == d.data[i]))
@@ -299,7 +299,7 @@ private:
 
 // The class ns_worm_tracker_commons_object implements an extendable parser/writer for the
 // Worm tracker Commons Object Notation schema
-// wcon_schema.json 
+// wcon_schema.json
 template<class timepoint_data_t = ns_wcon_default_data_record_element>
 class ns_worm_tracker_commons_object {
 public:
@@ -331,12 +331,12 @@ public:
 					std::cerr << "Difference detected in metadata\n";
 				if (!(data == w.data))
 					std::cerr << "Difference detected in data\n";
-		#endif;
+		#endif
 
 		return files == w.files &&
 			units == w.units &&
 			metadata == w.metadata &&
-			data == w.data;   
+			data == w.data;
 	}
 
 	friend std::ostream& operator<<(std::ostream& o, const ns_worm_tracker_commons_object<timepoint_data_t> & j) {
@@ -402,7 +402,7 @@ public:
 		}
 
 		switch (state) {
-		case ns_reading_base_class: throw std::exception("Entered unexpected state");
+		case ns_reading_base_class: throw std::runtime_error("Entered unexpected state");
 		case ns_reading_files: {
 			if (val == "prev")
 				next_string_vector = &data->files.prev;
@@ -493,7 +493,7 @@ public:
 			}
 			case ns_metadata_interpolate: {
 				if (data->metadata.interpolate.empty())
-					throw std::exception("Adding to empty interpolate object");
+					throw std::runtime_error("Adding to empty interpolate object");
 				if (val == "method")
 					next_string = &data->metadata.interpolate.rbegin()->method;
 				else if (val == "values")
@@ -506,7 +506,7 @@ public:
 			}
 			case ns_metadata_software: {
 				if (data->metadata.software.empty())
-					throw std::exception("Adding to empty software object");
+					throw std::runtime_error("Adding to empty software object");
 				if (object_depth == 3 || object_depth == 4) {
 					if (val == "name")
 						next_string = &data->metadata.software.rbegin()->tracker.name;
@@ -523,7 +523,7 @@ public:
 				break;
 			}
 
-			default: throw std::exception("Entered unexpected substate");
+			default: throw std::runtime_error("Entered unexpected substate");
 
 			}
 			break;
@@ -541,7 +541,7 @@ public:
 				substate = ns_data_ox;
 			else if (val == "oy")
 				substate = ns_data_oy;
-			else if (typename timepoint_data_t::json_field_is_a_known_subclass(val)) {
+			else if (timepoint_data_t::json_field_is_a_known_subclass(val)) {
 				current_data_element_subclass = val;
 			}
 			else {
@@ -550,7 +550,7 @@ public:
 			}
 			break;
 		}
-		default:throw std::exception("Entered unexpected state");
+		default:throw std::runtime_error("Entered unexpected state");
 		}
 		return true;
 	}
@@ -581,7 +581,7 @@ public:
 		}
 
 		if (next_double_vector == 0 && next_string_vector == 0)
-			throw std::exception("Unanticipated array");
+			throw std::runtime_error("Unanticipated array");
 		if (elements == std::size_t(-1))
 			return true;
 		if (next_double_vector != 0)
@@ -627,11 +627,11 @@ public:
 			ns_quick_type_conversion::set(data->data.data[next_data_index].oy, val); break;
 		case ns_data_n:
 			data->data.data[next_data_index].set_value(next_data_variable, val, current_data_element_subclass); break;
-		default: throw std::exception("Reached an unanticipated reading data substate.");
+		default: throw std::runtime_error("Reached an unanticipated reading data substate.");
 		}
 		if (array_depth == 1 && data_split == ns_split_by_variable && current_data_element_subclass.empty()) //if we are reading each variable separately, we need to increment through each array
 			next_data_index++;
-		//else 
+		//else
 		//	std::cerr << "WHA";
 		return true;
 	}
@@ -662,7 +662,7 @@ public:
 			if (array_depth == 0)
 				next_string_vector = 0;
 		}
-		else throw std::exception("Recieving an unanticipated integer");
+		else throw std::runtime_error("Recieving an unanticipated integer");
 		return true;
 	}
 	bool number_unsigned(number_unsigned_t val) {
@@ -680,10 +680,10 @@ public:
 		else if (next_double != 0) {
 			*next_double = val;
 			next_double = 0;
-		} 
+		}
 		else if (next_double_vector != 0) {
 			next_double_vector->resize(1);
-			(*next_double_vector)[0] = val;	
+			(*next_double_vector)[0] = val;
 			if (array_depth == 0)
 				next_double_vector = 0;
 		}
@@ -694,7 +694,7 @@ public:
 				next_string_vector = 0;
 		}
 		else
-			throw std::exception("Recieving an unanticipated unsigned integer");
+			throw std::runtime_error("Recieving an unanticipated unsigned integer");
 		return true;
 	}
 
@@ -724,8 +724,8 @@ public:
 			if (array_depth == 0)
 				next_string_vector = 0;
 		}
-		else 
-			throw std::exception("Recieving an unanticipated double");
+		else
+			throw std::runtime_error("Recieving an unanticipated double");
 		return true;
 	}
 	bool string(string_t& val) {
@@ -736,7 +736,7 @@ public:
 		if (state == ns_reading_data)
 			return add_data_point(val, current_data_element_subclass);
 		if (next_string_vector == 0 && next_string == 0 && next_enum == ns_no_enum)
-			throw std::exception("Recieving an unanticipated string");
+			throw std::runtime_error("Recieving an unanticipated string");
 		if (next_string != 0) {
 			*next_string = val;
 			next_string = 0;
@@ -755,7 +755,7 @@ public:
 			case ns_unit_oy: data->units.oy = ns_wcon_units::from_string(val); break;
 			case ns_unit_n:
 				if (next_unit.empty())
-					throw std::exception("No unit name found");
+					throw std::runtime_error("No unit name found");
 				data->units.additional_units[next_unit] = ns_wcon_units::from_string(val);
 				next_unit.resize(0);
 				break;
@@ -765,7 +765,7 @@ public:
 			case ns_stage:
 				data->metadata.stage = ns_wcon_metadata::stage_from_string(val);
 				break;
-			default: throw std::exception((std::string("Unknown next enum spec:") + val).c_str());
+			default: throw std::runtime_error((std::string("Unknown next enum spec:") + val).c_str());
 			}
 			next_enum = ns_no_enum;
 		}
@@ -890,7 +890,7 @@ std::string ns_wcon_metadata::to_string(const ns_wcon_metadata::ns_stage & stage
 	case ns_stage_na: return "?";
 	default:
 		snprintf(buf, 256, "%d", (int)stage);
-		throw std::exception((std::string("Unknown stage type") + buf).c_str());
+		throw std::runtime_error((std::string("Unknown stage type") + buf).c_str());
 	}
 }
 ns_wcon_metadata::ns_stage ns_wcon_metadata::stage_from_string(std::string & stage) {
@@ -901,7 +901,7 @@ ns_wcon_metadata::ns_stage ns_wcon_metadata::stage_from_string(std::string & sta
 	if (stage == "adult") return adult;
 	if (stage == "dauer") return dauer;
 	if (stage == "?") return ns_stage_na;
-	throw std::exception((std::string("Unknown stage") + stage).c_str());
+	throw std::runtime_error((std::string("Unknown stage") + stage).c_str());
 }
  std::string ns_wcon_metadata::to_string(const ns_wcon_metadata::ns_sex & sex) {
 	char buf[256];
@@ -911,7 +911,7 @@ ns_wcon_metadata::ns_stage ns_wcon_metadata::stage_from_string(std::string & sta
 	case ns_sex_na: return "?";
 	default:
 		snprintf(buf, 256, "%d", (int)sex);
-		throw std::exception((std::string("Unknown sex type") + buf).c_str());
+		throw std::runtime_error((std::string("Unknown sex type") + buf).c_str());
 	}
 }
  ns_wcon_metadata::ns_sex ns_wcon_metadata::sex_from_string(std::string & sex) {
@@ -994,7 +994,7 @@ std::string ns_wcon_units::to_string(const ns_wcon_units::ns_units & t) {
 	 default:
 		 char buf[256];
 		 snprintf(buf, 256, "%d", (int)t);
-		 throw std::exception((std::string("Unknown unit:") + buf).c_str());
+		 throw std::runtime_error((std::string("Unknown unit:") + buf).c_str());
 	 }
  }
 bool ns_wcon_units::matches_singular(const std::string & subject, const char * test) {
@@ -1038,10 +1038,10 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 	 if (str == "%" || matches_singular(str, "percent")) return ns_percent;
 	 if (str == "degrees") return ns_degrees;
 	 if (str == "" || str == "1") return ns_unitless;
-	 throw std::exception((std::string("Unknown unit:") + str).c_str());
+	 throw std::runtime_error((std::string("Unknown unit:") + str).c_str());
 
  }
- 
+
  nlohmann::json ns_wcon_units::to_json() const {
 	 nlohmann::json j;
 	 j["t"] = to_string(time);
@@ -1098,7 +1098,7 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
  template<class timepoint_data_t>
  nlohmann::json ns_wcon_data_record<timepoint_data_t>::to_json_split_timepoints() const {
 	 if (data.size() == 0)
-		 throw std::exception(" ns_wcon_data_record::to_json()::No data was provided");
+		 throw std::runtime_error(" ns_wcon_data_record::to_json()::No data was provided");
 	 nlohmann::json j;
 	 std::vector<nlohmann::json> tmp;
 	 tmp.reserve(data.size());
@@ -1110,7 +1110,7 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
  template<class timepoint_data_t>
  nlohmann::json ns_wcon_data_record<timepoint_data_t>::to_json_split_measurements() const {
 	 if (data.size() == 0)
-		 throw std::exception(" ns_wcon_data_record::to_json()::No data was provided");
+		 throw std::runtime_error(" ns_wcon_data_record::to_json()::No data was provided");
 	 nlohmann::json j;
 
 	 std::vector<double> tmp;
@@ -1118,7 +1118,7 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 	 tmp.resize(data.size());
 	 tmp_s.resize(data.size());
 
-	 //add required t, x, and y	
+	 //add required t, x, and y
 	 for (std::vector<double>::size_type i = 0; i < data.size(); i++)	tmp_s[i] = data[i].get_id();
 	 j["id"] = tmp_s;
 	 for (std::vector<double>::size_type i = 0; i < data.size(); i++)	tmp[i] = data[i].get_t();
@@ -1142,8 +1142,8 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 	 }
 
 	 //add any additional time-varying fields
-	 for (int k = 0; k < typename timepoint_data_t::number_of_additional_json_fields(); k++) {
-		 ns_wcon_data_element_member_type type = typename timepoint_data_t::additional_json_field_type(k);
+	 for (int k = 0; k < timepoint_data_t::number_of_additional_json_fields(); k++) {
+		 ns_wcon_data_element_member_type type = timepoint_data_t::additional_json_field_type(k);
 		 switch (type) {
 		 case ns_unknown:
 			 std::cerr << "Encountered an unknown field type for spec" << k << "\n"; break;
@@ -1182,9 +1182,9 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 			 break;
 		 }
 		 default:
-			 throw std::exception("Unknown data member type variable");
+			 throw std::runtime_error("Unknown data member type variable");
 		 }
-		 
+
 	 }
 	 return j;
  }
@@ -1193,7 +1193,7 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
  public:
 	 template<class timepoint_data_t>
 	 bool operator ()(const timepoint_data_t & a, const timepoint_data_t & b) {
-		 if (a.get_t() < b.get_t()) return true; 
+		 if (a.get_t() < b.get_t()) return true;
 		 if (a.get_t() > b.get_t()) return false;
 		 if (a.get_id() < b.get_id()) return true;
 		 if (a.get_id() > b.get_id()) return false;
@@ -1226,7 +1226,7 @@ ns_wcon_units::ns_units ns_wcon_units::from_string(const std::string & str) {
 
 	 return j;
  }
- 
+
 template<class timepoint_data_t>
 void ns_worm_tracker_commons_object<timepoint_data_t>::from_stream(std::istream & in) {
 
@@ -1241,8 +1241,8 @@ void ns_worm_tracker_commons_object<timepoint_data_t>::to_stream(std::ostream & 
  }
 template<class timepoint_data_t>
  std::ostream& operator<<(std::ostream& o, const ns_worm_tracker_commons_object<timepoint_data_t> & j) {
-	 j.to_file(out);
-	 return out;
+	 j.to_file(o);
+	 return o;
  }
  template<class timepoint_data_t>
  std::istream& operator>>(std::istream& i, ns_worm_tracker_commons_object<timepoint_data_t> & j) {
