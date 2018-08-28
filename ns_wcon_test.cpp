@@ -139,7 +139,7 @@ int main()
 		//////////////////
 		//TEST 4: Read the simple wcon object
 		//////////////////
-		if (0){
+		if (1){
 			std::ifstream infile("simple.wcon");
 
 			ns_worm_tracker_commons_object<> obj;
@@ -150,7 +150,7 @@ int main()
 		//////////////////
 		//TEST 5: Read the complex wcon object
 		//////////////////
-		if (0){
+		if (1){
 			std::ifstream infile("rich.wcon");
 
 			ns_worm_tracker_commons_object<ns_wcon_rich_data_record_element> obj;
@@ -163,7 +163,7 @@ int main()
 		//////////////////
 		//TEST 6: Read the complex wcon object in split format
 		//////////////////
-		if (0){
+		if (1){
 			std::ifstream infile("rich_with_measurements_split.wcon");
 
 			ns_worm_tracker_commons_object<ns_wcon_rich_data_record_element> obj;
